@@ -27,6 +27,13 @@ def card_experiment():
 
     STEP 3: Check independence:
             P(A ∩ B) ?= P(A)P(B)
+            
+            Two events A and B are independent if and only if:
+            P(A ∩ B) = P(A) × P(B)
+            If this equality holds, the events are independent (occurrence of one
+            does not affect the probability of the other). This test verifies whether
+            drawing an Ace on the first draw affects the probability of drawing an Ace
+            on the second draw (without replacement).
 
     STEP 4: Simulate 200,000 experiments
             WITHOUT replacement.
@@ -50,13 +57,21 @@ def card_experiment():
         absolute_error
     """
 
-    # theoretical probabilities
+    # Theoretical probabilities
     P_A = 4 / 52
+    
+    # Law of Total Probability for P(B):
+    # P(B) = P(B|A)P(A) + P(B|A^c)P(A^c) = 4/52
     P_B = 4 / 52
+    
     P_B_given_A = 3 / 51
     P_AB = P_A * P_B_given_A
+    
+    # STEP 3: Check independence by comparing P(A ∩ B) with P(A) × P(B)
+    P_A_times_P_B = P_A * P_B
+    is_independent = abs(P_AB - P_A_times_P_B) < 1e-10
 
-    # simulation
+    # Simulation
     np.random.seed(42)
     trials = 200000
     deck = np.array([1] * 4 + [0] * 48)
@@ -107,11 +122,11 @@ def bernoulli_lightbulb(p=0.05):
         absolute_error
     """
 
-    # theoretical probabilities
+    # Theoretical probabilities
     theoretical_P_X_1 = p
     theoretical_P_X_0 = 1 - p
 
-    # simulation
+    # Simulation
     np.random.seed(42)
     trials = 100000
     samples = np.random.choice([0, 1], size=trials, p=[1 - p, p])
@@ -153,12 +168,12 @@ def binomial_bulbs(n=10, p=0.05):
         absolute_error
     """
 
-    # theoretical probabilities
+    # Theoretical probabilities
     theoretical_P_0 = (1 - p) ** n
     theoretical_P_2 = math.comb(n, 2) * (p ** 2) * ((1 - p) ** (n - 2))
     theoretical_P_ge_1 = 1 - theoretical_P_0
 
-    # simulation
+    # Simulation
     np.random.seed(42)
     trials = 100000
     samples = np.random.binomial(n, p, size=trials)
@@ -203,12 +218,12 @@ def geometric_die():
     """
 
     p = 1 / 6
-    # theoretical
+    # Theoretical probabilities
     theoretical_P_1 = p
     theoretical_P_3 = ((1 - p) ** 2) * p
     theoretical_P_gt_4 = (1 - p) ** 4
 
-    # simulation
+    # Simulation
     np.random.seed(42)
     trials = 200000
     samples = np.random.geometric(p, size=trials)
@@ -250,13 +265,26 @@ def poisson_customers(lam=12):
         absolute_error
     """
 
-    # theoretical probabilities
-    theoretical_P_0 = math.exp(-lam)
-    theoretical_P_15 = (math.exp(-lam) * lam**15) / math.factorial(15)
-    cdf_to_17 = sum((math.exp(-lam) * lam**k) / math.factorial(k) for k in range(18))
+    # Theoretical probabilities using iterative recurrence to avoid numerical instability
+    exp_neg_lam = math.exp(-lam)
+    theoretical_P_0 = exp_neg_lam
+    
+    # P(X=15) using recurrence: P(X=k) = P(X=k-1) * lam / k
+    term = exp_neg_lam
+    for _ in range(15):
+        term *= lam / (_ + 1)
+    theoretical_P_15 = term
+    
+    # CDF P(X ≤ 17) summing all probabilities using iterative method
+    cdf_to_17 = 0
+    term = exp_neg_lam
+    for k in range(18):
+        cdf_to_17 += term
+        if k < 17:
+            term *= lam / (k + 1)
     theoretical_P_ge_18 = 1 - cdf_to_17
 
-    # simulation
+    # Simulation
     np.random.seed(42)
     trials = 100000
     samples = np.random.poisson(lam, size=trials)
