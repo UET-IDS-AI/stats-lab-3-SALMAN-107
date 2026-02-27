@@ -50,7 +50,31 @@ def card_experiment():
         absolute_error
     """
 
-    raise NotImplementedError
+    # theoretical probabilities
+    P_A = 4 / 52
+    P_B = 4 / 52
+    P_B_given_A = 3 / 51
+    P_AB = P_A * P_B_given_A
+
+    # simulation
+    np.random.seed(42)
+    trials = 200000
+    deck = np.array([1] * 4 + [0] * 48)
+    emp_A_count = 0
+    emp_B_given_A_count = 0
+    emp_A_events = 0
+    for _ in range(trials):
+        draw = np.random.choice(deck, size=2, replace=False)
+        if draw[0] == 1:
+            emp_A_count += 1
+            emp_A_events += 1
+            if draw[1] == 1:
+                emp_B_given_A_count += 1
+    empirical_P_A = emp_A_count / trials
+    empirical_P_B_given_A = emp_B_given_A_count / emp_A_events if emp_A_events > 0 else 0
+    absolute_error = abs(empirical_P_B_given_A - P_B_given_A)
+
+    return P_A, P_B, P_B_given_A, P_AB, empirical_P_A, empirical_P_B_given_A, absolute_error
 
 
 # =========================================================
@@ -83,7 +107,18 @@ def bernoulli_lightbulb(p=0.05):
         absolute_error
     """
 
-    raise NotImplementedError
+    # theoretical probabilities
+    theoretical_P_X_1 = p
+    theoretical_P_X_0 = 1 - p
+
+    # simulation
+    np.random.seed(42)
+    trials = 100000
+    samples = np.random.choice([0, 1], size=trials, p=[1 - p, p])
+    empirical_P_X_1 = np.mean(samples == 1)
+
+    absolute_error = abs(empirical_P_X_1 - theoretical_P_X_1)
+    return theoretical_P_X_1, theoretical_P_X_0, empirical_P_X_1, absolute_error
 
 
 # =========================================================
@@ -118,7 +153,19 @@ def binomial_bulbs(n=10, p=0.05):
         absolute_error
     """
 
-    raise NotImplementedError
+    # theoretical probabilities
+    theoretical_P_0 = (1 - p) ** n
+    theoretical_P_2 = math.comb(n, 2) * (p ** 2) * ((1 - p) ** (n - 2))
+    theoretical_P_ge_1 = 1 - theoretical_P_0
+
+    # simulation
+    np.random.seed(42)
+    trials = 100000
+    samples = np.random.binomial(n, p, size=trials)
+    empirical_P_ge_1 = np.mean(samples >= 1)
+
+    absolute_error = abs(empirical_P_ge_1 - theoretical_P_ge_1)
+    return theoretical_P_0, theoretical_P_2, theoretical_P_ge_1, empirical_P_ge_1, absolute_error
 
 
 # =========================================================
@@ -155,7 +202,20 @@ def geometric_die():
         absolute_error
     """
 
-    raise NotImplementedError
+    p = 1 / 6
+    # theoretical
+    theoretical_P_1 = p
+    theoretical_P_3 = ((1 - p) ** 2) * p
+    theoretical_P_gt_4 = (1 - p) ** 4
+
+    # simulation
+    np.random.seed(42)
+    trials = 200000
+    samples = np.random.geometric(p, size=trials)
+    empirical_P_gt_4 = np.mean(samples > 4)
+
+    absolute_error = abs(empirical_P_gt_4 - theoretical_P_gt_4)
+    return theoretical_P_1, theoretical_P_3, theoretical_P_gt_4, empirical_P_gt_4, absolute_error
 
 
 # =========================================================
@@ -190,4 +250,17 @@ def poisson_customers(lam=12):
         absolute_error
     """
 
-    raise NotImplementedError
+    # theoretical probabilities
+    theoretical_P_0 = math.exp(-lam)
+    theoretical_P_15 = (math.exp(-lam) * lam**15) / math.factorial(15)
+    cdf_to_17 = sum((math.exp(-lam) * lam**k) / math.factorial(k) for k in range(18))
+    theoretical_P_ge_18 = 1 - cdf_to_17
+
+    # simulation
+    np.random.seed(42)
+    trials = 100000
+    samples = np.random.poisson(lam, size=trials)
+    empirical_P_ge_18 = np.mean(samples >= 18)
+
+    absolute_error = abs(empirical_P_ge_18 - theoretical_P_ge_18)
+    return theoretical_P_0, theoretical_P_15, theoretical_P_ge_18, empirical_P_ge_18, absolute_error
